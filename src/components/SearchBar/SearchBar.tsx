@@ -1,40 +1,52 @@
-import toast from "react-hot-toast";
-import css from "./SearchBar.module.css";
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+import styles from './SearchBar.module.css';
 
-interface SearchBarProps {
-  onSubmit: (query: string) => void;
-}
+type Props = {
+  onSubmit: (value: string) => void;
+};
 
-export default function SearchBar({ onSubmit }: SearchBarProps) {
-  const handleSubmit = (formData: FormData) => {
-    const query = formData.get("query") as string;
-    if (query.trim() === "") {
-      toast("Please enter your search query.", { icon: "🤔" });
+export default function SearchBar({ onSubmit }: Props) {
+  const [inputValue, setInputValue] = useState('');
+
+  const onFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const searchValue = inputValue.trim();
+
+    if (searchValue === '') {
+      toast.error('Please enter your search query.');
       return;
     }
-    onSubmit(query);
+
+    onSubmit(searchValue);
+    setInputValue('');
   };
+
   return (
-    <header className={css.header}>
-      <div className={css.container}>
+    <header className={styles.header}>
+      <div className={styles.container}>
         <a
-          className={css.link}
           href="https://www.themoviedb.org/"
           target="_blank"
           rel="noopener noreferrer"
+          className={styles.link}
         >
           Powered by TMDB
         </a>
-        <form action={handleSubmit} className={css.form}>
+
+        <form onSubmit={onFormSubmit} className={styles.form}>
           <input
-            className={css.input}
             type="text"
-            name="query"
-            autoComplete="off"
+            name="movieSearch"
             placeholder="Search movies..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             autoFocus
+            autoComplete="off"
+            className={styles.input}
           />
-          <button className={css.button} type="submit">
+          <button type="submit" className={styles.button}>
             Search
           </button>
         </form>

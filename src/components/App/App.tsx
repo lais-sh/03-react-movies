@@ -1,125 +1,94 @@
-import "./App.module.css";
-import SearchBar from "../SearchBar/SearchBar";
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import type { Movie } from "../../types/movie";
-import fetchMovies from "../../services/movieService";
-import MovieGrid from "../MovieGrid/MovieGrid";
-import Modal from "../Common/Modal";
-import MovieModal from "../MovieModal/MovieModal";
-import ErrorMessage from "../ErrorMessage/ErrorMessage";
+import SearchBar from "../SearchBar/SearchBar";
+import MovieGallery from "../MovieGrid/MovieGrid";
+import MovieDetails from "../MovieModal/MovieModal";
+import ModalWrapper from "../Common/Modal";
+import Spinner from "../Loader/Loader";
+import ErrorNotice from "../ErrorMessage/ErrorMessage";
 import RandomBackdrop from "../RandomBackdrop/RandomBackdrop";
+import fetchMovies from "../../services/movieService";
 import { getRandomBackdropUrl } from "../../services/getRandomBackdrop";
-import Loader from "../Loader/Loader";
+import type { Movie } from "../../types/movie";
+import "./App.module.css";
 
 export default function App() {
-  //STATES
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [isError, setIsError] = useState<boolean>(false);
-  const [bgUrl, setBgUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [movieList, setMovieList] = useState<Movie[]>([]);
+  const [chosenMovie, setChosenMovie] = useState<Movie | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [backdrop, setBackdrop] = useState<string | null>(null);
 
-  //SEARCHING AND RENDERING MOVIES BY QUERY
-  async function handleSearch(query: string) {
-    setIsError(false);
+  const handleSearch = async (searchTerm: string) => {
+    setHasError(false);
     setIsLoading(true);
     try {
-      setMovies([]);
-      const data = await fetchMovies(query);
-      setMovies(data);
-      if (data.length === 0) {
-        toast("No movies found for your request.", { icon: "😞" });
+      setMovieList([]);
+      const result = await fetchMovies(searchTerm);
+      if (result.length === 0) {
+        toast("No movies found for your request.", { icon: "🎬" });
       }
-    } catch (error) {
-      console.error(error);
-      setIsError(true);
+      setMovieList(result);
+    } catch (err) {
+      console.error("Search failed:", err);
+      setHasError(true);
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
-  //MOVIECARD MODAL WINDOW OPTIONS
-  const openModal = (): void => setIsModalOpen(true);
-  const closeModal = (): void => setIsModalOpen(false);
+  const openModal = () => setShowModal(true);
+  const closeModal = () => {
+    setShowModal(false);
+    setChosenMovie(null);
+  };
 
-  //FETCH RANDOM POSTERS FOR PAGE BACKDROP
   useEffect(() => {
-    if (movies.length > 0) return;
+    if (movieList.length > 0) return;
 
-    async function preloadAndSetBackdrop() {
+    const updateBackdrop = async () => {
       try {
         const url = await getRandomBackdropUrl();
-
         const img = new Image();
-        if (url) {
-          img.src = url;
-        }
-
-        img.onload = () => {
-          setBgUrl(url);
-        };
+        img.src = url || "";
+        img.onload = () => setBackdrop(url);
       } catch (error) {
-        console.error("Failed to load backdrop", error);
+        console.error("Backdrop load failed:", error);
       }
-    }
-
-    preloadAndSetBackdrop();
-
-    const intervalId = setInterval(() => {
-      preloadAndSetBackdrop();
-    }, 8000);
-
-    return () => {
-      clearInterval(intervalId);
     };
-  }, [movies.length]);
 
-  //MARKUP
+    updateBackdrop();
+    const interval = setInterval(updateBackdrop, 8000);
+    return () => clearInterval(interval);
+  }, [movieList.length]);
+
   return (
     <>
-      <div>
-        <Toaster />
-      </div>
+      <Toaster />
 
-      {/* ---------------------------- */}
+      {isLoading && <Spinner />}
 
-      {isLoading && <Loader />}
-
-      {/* ---------------------------- */}
-
-      {movies.length === 0 && <RandomBackdrop bgUrl={bgUrl} />}
-
-      {/* ---------------------------- */}
+      {movieList.length === 0 && <RandomBackdrop bgUrl={backdrop} />}
 
       <SearchBar onSubmit={handleSearch} />
 
-      {/* ---------------------------- */}
-
-      {!isError ? (
-        <MovieGrid
-          movies={movies}
-          onSelect={(movie) => {
-            setSelectedMovie(movie);
+      {!hasError ? (
+        <MovieGallery
+          movies={movieList}
+          onSelectMovie={(movie) => {
+            setChosenMovie(movie);
             openModal();
           }}
         />
       ) : (
-        <ErrorMessage />
+        <ErrorNotice />
       )}
 
-      {/* ----------------------------- */}
-
-      {isModalOpen && selectedMovie && (
-        <Modal
-          onClose={() => {
-            closeModal();
-            setSelectedMovie(null);
-          }}
-        >
-          <MovieModal movie={selectedMovie} />
-        </Modal>
+      {showModal && chosenMovie && (
+        <ModalWrapper onClose={closeModal}>
+          <MovieDetails movie={chosenMovie} />
+        </ModalWrapper>
       )}
     </>
   );

@@ -1,37 +1,35 @@
-import css from "./MovieGrid.module.css";
 import type { Movie } from "../../types/movie";
-import noimage from "/src/assets/noimage.jpg";
+import placeholder from "/src/assets/noimage.jpg";
+import css from "./MovieGrid.module.css";
 
-interface MovieGridProps {
-  onSelect: (movie: Movie) => void;
+interface Props {
   movies: Movie[];
+  onSelectMovie: (movie: Movie) => void;
 }
 
-export default function MovieGrid({ onSelect, movies }: MovieGridProps) {
+export default function MovieGallery({ movies, onSelectMovie }: Props) {
   return (
     <ul className={css.grid}>
-      {movies.map((movie) => {
-        const { id, poster_path, title } = movie;
+      {movies.map((film) => {
+        const imagePath = film.poster_path
+          ? `https://image.tmdb.org/t/p/w500/${film.poster_path}`
+          : placeholder;
 
         return (
-          <li key={id}>
+          <li key={film.id}>
             <div
               className={css.card}
-              onClick={() => onSelect(movie)}
+              onClick={() => onSelectMovie(film)}
               role="button"
               tabIndex={0}
             >
               <img
                 className={css.image}
-                src={
-                  poster_path
-                    ? `https://image.tmdb.org/t/p/w500/${poster_path}`
-                    : noimage
-                }
-                alt={title}
+                src={imagePath}
+                alt={film.title}
                 loading="lazy"
               />
-              <h2 className={css.title}>{title}</h2>
+              <h2 className={css.title}>{film.title}</h2>
             </div>
           </li>
         );

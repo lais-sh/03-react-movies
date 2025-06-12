@@ -1,33 +1,27 @@
 import type { Movie } from "../../types/movie";
 import css from "./MovieModal.module.css";
-import noimage from "/src/assets/noimage.jpg";
+import fallbackImg from "/src/assets/noimage.jpg";
 
-interface MovieModalProps {
+interface Props {
   movie: Movie;
 }
 
-export default function MovieModal({ movie }: MovieModalProps) {
-  const { backdrop_path, title, overview, release_date, vote_average } = movie;
+export default function MovieDetails({ movie }: Props) {
+  const imgSrc = movie.backdrop_path
+    ? `https://image.tmdb.org/t/p/original/${movie.backdrop_path}`
+    : fallbackImg;
 
   return (
     <>
-      <img
-        src={
-          backdrop_path
-            ? `https://image.tmdb.org/t/p/original/${backdrop_path}`
-            : noimage
-        }
-        alt={title}
-        className={css.image}
-      />
+      <img src={imgSrc} alt={movie.title} className={css.image} />
       <div className={css.content}>
-        <h2>{title}</h2>
-        <p>{overview}</p>
+        <h2>{movie.title}</h2>
+        <p>{movie.overview}</p>
         <p>
-          <strong>Release Date:</strong> {release_date}
+          <strong>Release:</strong> {movie.release_date}
         </p>
         <p>
-          <strong>Rating:</strong> {`${vote_average}/10`}
+          <strong>Score:</strong> {movie.vote_average}/10
         </p>
       </div>
     </>
