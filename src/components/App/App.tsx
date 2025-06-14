@@ -64,7 +64,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [movies.length]);
 
-  const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedMovie(null);
