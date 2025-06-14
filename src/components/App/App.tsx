@@ -1,58 +1,59 @@
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
+
 import SearchBar from "../SearchBar/SearchBar";
-import MovieGallery from "../MovieGrid/MovieGrid";
-import MovieDetails from "../MovieModal/MovieModal";
-import ModalWrapper from "../Common/Modal";
-import Spinner from "../Loader/Loader";
-import ErrorNotice from "../ErrorMessage/ErrorMessage";
+import MovieGrid from "../MovieGrid/MovieGrid";
+import MovieModal from "../MovieModal/MovieModal";
+import Loader from "../Loader/Loader";
+import ErrorMessage from "../ErrorMessage/ErrorMessage";
 import RandomBackdrop from "../RandomBackdrop/RandomBackdrop";
+
 import fetchMovies from "../../services/movieService";
 import { getRandomBackdropUrl } from "../../services/getRandomBackdrop";
 import type { Movie } from "../../types/movie";
-import "./App.module.css";
+
+import css from "./App.module.css";
 
 export default function App() {
-  const [movieList, setMovieList] = useState<Movie[]>([]);
-  const [chosenMovie, setChosenMovie] = useState<Movie | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [query, setQuery] = useState("");
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [backdrop, setBackdrop] = useState<string | null>(null);
+  const [backdropUrl, setBackdropUrl] = useState<string | null>(null);
 
-  const handleSearch = async (searchTerm: string) => {
-    setHasError(false);
+  // Обробка пошуку через FormData
+  const handleSearch = async (formData: FormData) => {
+    const newQuery = formData.get("query")?.toString().trim() ?? "";
+    setQuery(newQuery);
+    setIsError(false);
     setIsLoading(true);
+
     try {
-      setMovieList([]);
-      const result = await fetchMovies(searchTerm);
+      const result = await fetchMovies(newQuery);
       if (result.length === 0) {
         toast("No movies found for your request.", { icon: "🎬" });
       }
-      setMovieList(result);
-    } catch (err) {
-      console.error("Search failed:", err);
-      setHasError(true);
+      setMovies(result);
+    } catch (error) {
+      console.error("Search failed:", error);
+      setIsError(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const openModal = () => setShowModal(true);
-  const closeModal = () => {
-    setShowModal(false);
-    setChosenMovie(null);
-  };
-
+  // Фонове зображення
   useEffect(() => {
-    if (movieList.length > 0) return;
+    if (movies.length > 0) return;
 
     const updateBackdrop = async () => {
       try {
         const url = await getRandomBackdropUrl();
         const img = new Image();
         img.src = url || "";
-        img.onload = () => setBackdrop(url);
+        img.onload = () => setBackdropUrl(url);
       } catch (error) {
         console.error("Backdrop load failed:", error);
       }
@@ -61,35 +62,37 @@ export default function App() {
     updateBackdrop();
     const interval = setInterval(updateBackdrop, 8000);
     return () => clearInterval(interval);
-  }, [movieList.length]);
+  }, [movies.length]);
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedMovie(null);
+  };
 
   return (
-    <>
+    <div className={css.app}>
       <Toaster />
+      {isLoading && <Loader />}
+      {movies.length === 0 && <RandomBackdrop bgUrl={backdropUrl} />}
 
-      {isLoading && <Spinner />}
+      <SearchBar action={handleSearch} defaultValue={query} />
 
-      {movieList.length === 0 && <RandomBackdrop bgUrl={backdrop} />}
-
-      <SearchBar onSubmit={handleSearch} />
-
-      {!hasError ? (
-        <MovieGallery
-          movies={movieList}
-          onSelectMovie={(movie) => {
-            setChosenMovie(movie);
-            openModal();
+      {!isError ? (
+        <MovieGrid
+          movies={movies}
+          onSelect={(movie) => {
+            setSelectedMovie(movie);
+             setIsModalOpen(true);
           }}
         />
       ) : (
-        <ErrorNotice />
+        <ErrorMessage />
       )}
 
-      {showModal && chosenMovie && (
-        <ModalWrapper onClose={closeModal}>
-          <MovieDetails movie={chosenMovie} />
-        </ModalWrapper>
+      {isModalOpen && selectedMovie && (
+        <MovieModal movie={selectedMovie} onClose={closeModal} />
       )}
-    </>
+    </div>
   );
 }
