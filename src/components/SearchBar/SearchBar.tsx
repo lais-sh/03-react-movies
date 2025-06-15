@@ -1,16 +1,24 @@
-import css from "./SearchBar.module.css";
+import css from './SearchBar.module.css';
+import { toast } from 'react-hot-toast';
 
 interface SearchBarProps {
-  action: (formData: FormData) => void;
+  onSubmit: (query: string) => void;
   defaultValue?: string;
 }
 
-export default function SearchBar({ action, defaultValue = "" }: SearchBarProps) {
+export default function SearchBar({ onSubmit, defaultValue = '' }: SearchBarProps) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
-    const formData = new FormData(form);
-    action(formData);
+    const input = form.elements.namedItem('query') as HTMLInputElement;
+    const query = input.value.trim();
+
+    if (!query) {
+      toast.error('Please enter a movie name');
+      return;
+    }
+
+    onSubmit(query);
     form.reset();
   };
 

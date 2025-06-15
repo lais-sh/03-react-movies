@@ -18,14 +18,11 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState<Movie[]>([]);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [backdropUrl, setBackdropUrl] = useState<string | null>(null);
 
-  // Обробка пошуку через FormData
-  const handleSearch = async (formData: FormData) => {
-    const newQuery = formData.get("query")?.toString().trim() ?? "";
+  const handleSearch = async (newQuery: string) => {
     setQuery(newQuery);
     setIsError(false);
     setIsLoading(true);
@@ -44,7 +41,6 @@ export default function App() {
     }
   };
 
-  // Фонове зображення
   useEffect(() => {
     if (movies.length > 0) return;
 
@@ -65,7 +61,6 @@ export default function App() {
   }, [movies.length]);
 
   const closeModal = () => {
-    setIsModalOpen(false);
     setSelectedMovie(null);
   };
 
@@ -75,21 +70,18 @@ export default function App() {
       {isLoading && <Loader />}
       {movies.length === 0 && <RandomBackdrop bgUrl={backdropUrl} />}
 
-      <SearchBar action={handleSearch} defaultValue={query} />
+      <SearchBar onSubmit={handleSearch} defaultValue={query} />
 
       {!isError ? (
         <MovieGrid
           movies={movies}
-          onSelect={(movie) => {
-            setSelectedMovie(movie);
-             setIsModalOpen(true);
-          }}
+          onSelect={(movie) => setSelectedMovie(movie)}
         />
       ) : (
         <ErrorMessage />
       )}
 
-      {isModalOpen && selectedMovie && (
+      {selectedMovie && (
         <MovieModal movie={selectedMovie} onClose={closeModal} />
       )}
     </div>
