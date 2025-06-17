@@ -1,0 +1,9 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #0d253f;
+  color: #fff;
+  padding: 20px;
+}
