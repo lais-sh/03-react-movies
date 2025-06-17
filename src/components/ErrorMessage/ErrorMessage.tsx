@@ -1,9 +1,9 @@
-import css from "./ErrorMessage.module.css";
+import styles from './ErrorMessage.module.css';
 
 export default function ErrorMessage() {
   return (
-    <div className={css.wrp}>
-      <p className={css.text}>There was an error, please try again...</p>
-    </div>
+    <section className={styles.container} role="alert" aria-live="assertive">
+      <p className={styles.message}>Oops! Something went wrong. Please try again later.</p>
+    </section>
   );
 }

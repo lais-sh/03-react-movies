@@ -1,30 +1,32 @@
 import axios from "axios";
 import type { Movie } from "../types/movie";
 
-const BASE_URL = "https://api.themoviedb.org/3/search/movie";
-const TOKEN = import.meta.env.VITE_TMDB_TOKEN;
+const API_URL = "https://api.themoviedb.org/3/search/movie";
+const AUTH_TOKEN = import.meta.env.VITE_TMDB_TOKEN;
 
-interface TMDBResponse {
+interface ApiResponse {
   results: Movie[];
 }
 
-export default async function fetchMovies(query: string): Promise<Movie[]> {
-  const config = {
-    params: {
-      query,
-      include_adult: false,
-      language: "en-US",
-      page: 1,
-    },
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-    },
-  };
-
+export const fetchMovies = async (searchQuery: string): Promise<Movie[]> => {
   try {
-    const response = await axios.get<TMDBResponse>(BASE_URL, config);
-    return response.data.results;
-  } catch (error) {
-    throw new Error("Failed to fetch movies from TMDB.");
+    const { data } = await axios.get<ApiResponse>(API_URL, {
+      params: {
+        query: searchQuery,
+        language: "en-US",
+        include_adult: false,
+        page: 1,
+      },
+      headers: {
+        Authorization: `Bearer ${AUTH_TOKEN}`,
+      },
+    });
+
+    return data.results;
+  } catch (err) {
+    console.error("TMDB API error:", err);
+    throw new Error("Could not retrieve movies. Please try again later.");
   }
-}
+};
+
+export default fetchMovies;

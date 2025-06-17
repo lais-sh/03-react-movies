@@ -1,34 +1,45 @@
 import type { Movie } from "../../types/movie";
-import placeholder from "/src/assets/noimage.jpg";
+import noImage from "/src/assets/noimage.jpg";
 import css from "./MovieGrid.module.css";
 
 interface MovieGridProps {
-  movies: Movie[];
-  onSelect: (movie: Movie) => void;
+  movieList: Movie[];
+  handleMovieClick: (movie: Movie) => void;
 }
 
-export default function MovieGrid({ movies, onSelect }: MovieGridProps) {
+export default function MovieGrid({ movieList, handleMovieClick }: MovieGridProps) {
   return (
-    <ul className={css.grid}>
-      {movies.map((movie) => {
-        const imagePath = movie.poster_path
-          ? `https://image.tmdb.org/t/p/w500/${movie.poster_path}`
-          : placeholder;
+    <section>
+      <ul className={css.wrapper}>
+        {movieList.map(({ id, title, poster_path, ...rest }) => {
+          const posterUrl = poster_path
+            ? `https://image.tmdb.org/t/p/w500/${poster_path}`
+            : noImage;
 
-        return (
-          <li key={movie.id} className={css.card} onClick={() => onSelect(movie)}>
-            <img
-              className={css.poster}
-              src={imagePath}
-              alt={movie.title}
-              loading="lazy"
-            />
-            <div className={css.caption}>
-              <h3 className={css.title}>{movie.title}</h3>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+          const movieData = { id, title, poster_path, ...rest };
+
+          return (
+            <li
+              key={id}
+              className={css.cardItem}
+              role="button"
+              tabIndex={0}
+              onClick={() => handleMovieClick(movieData)}
+              onKeyDown={(e) => e.key === "Enter" && handleMovieClick(movieData)}
+            >
+              <div className={css.imageWrapper}>
+                <img
+                  src={posterUrl}
+                  alt={title || "Movie poster"}
+                  className={css.image}
+                  loading="lazy"
+                />
+              </div>
+              <p className={css.captionText}>{title}</p>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

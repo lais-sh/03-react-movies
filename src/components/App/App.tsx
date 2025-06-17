@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
+import { useEffect, useState } from 'react';
+import { Toaster, toast } from 'react-hot-toast';
 
 import SearchBar from '../SearchBar/SearchBar';
 import MovieGrid from '../MovieGrid/MovieGrid';
@@ -15,78 +15,69 @@ import type { Movie } from '../../types/movie';
 import css from './App.module.css';
 
 export default function App() {
-  const [query, setQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [movies, setMovies] = useState<Movie[]>([]);
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [isError, setIsError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [backdropUrl, setBackdropUrl] = useState<string | null>(null);
+  const [activeMovie, setActiveMovie] = useState<Movie | null>(null);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [backdrop, setBackdrop] = useState<string | null>(null);
 
-  // ✅ Новий правильний обробник для React Form Action API
-  const handleSearch = async (formData: FormData) => {
-    const newQuery = formData.get('query')?.toString().trim() ?? '';
-    setQuery(newQuery);
-    setIsError(false);
-    setIsLoading(true);
+  const handleForm = async (formData: FormData) => {
+    const term = formData.get('query')?.toString().trim() ?? '';
+    setSearchTerm(term);
+    setError(false);
+    setLoading(true);
 
     try {
-      const result = await fetchMovies(newQuery);
-      if (result.length === 0) {
-        toast('No movies found for your request.', { icon: '🎬' });
+      const results = await fetchMovies(term);
+      if (results.length === 0) {
+        toast('No movies found.', { icon: '🎬' });
       }
-      setMovies(result);
-    } catch (error) {
-      console.error('Search failed:', error);
-      setIsError(true);
+      setMovies(results);
+    } catch (err) {
+      console.error('Ошибка загрузки фильмов:', err);
+      setError(true);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (movies.length > 0) return;
+    if (movies.length) return;
 
-    const updateBackdrop = async () => {
+    const loadBackdrop = async () => {
       try {
         const url = await getRandomBackdropUrl();
         const img = new Image();
-        img.src = url || '';
-        img.onload = () => setBackdropUrl(url);
-      } catch (error) {
-        console.error('Backdrop load failed:', error);
+        img.src = url ?? '';
+        img.onload = () => setBackdrop(url);
+      } catch (err) {
+        console.warn('Backdrop failed:', err);
       }
     };
 
-    updateBackdrop();
-    const interval = setInterval(updateBackdrop, 8000);
-    return () => clearInterval(interval);
-  }, [movies.length]);
+    loadBackdrop();
+    const timer = setInterval(loadBackdrop, 8000);
+    return () => clearInterval(timer);
+  }, [movies]);
 
-  const closeModal = () => {
-    setSelectedMovie(null);
-  };
+  const closeModal = () => setActiveMovie(null);
 
   return (
     <div className={css.app}>
       <Toaster />
-      {isLoading && <Loader />}
-      {movies.length === 0 && <RandomBackdrop bgUrl={backdropUrl} />}
+      {loading && <Loader />}
+      {!movies.length && <RandomBackdrop bgUrl={backdrop} />}
 
-      {/* ✅ використовує action замість onSubmit */}
-      <SearchBar action={handleSearch} defaultValue={query} />
+      <SearchBar action={handleForm} defaultValue={searchTerm} />
 
-      {!isError ? (
-        <MovieGrid
-          movies={movies}
-          onSelect={(movie) => setSelectedMovie(movie)}
-        />
-      ) : (
+      {error ? (
         <ErrorMessage />
+      ) : (
+        <MovieGrid movieList={movies} handleMovieClick={setActiveMovie} />
       )}
 
-      {selectedMovie && (
-        <MovieModal movie={selectedMovie} onClose={closeModal} />
-      )}
+      {activeMovie && <MovieModal movie={activeMovie} onClose={closeModal} />}
     </div>
   );
 }

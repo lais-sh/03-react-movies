@@ -1,9 +1,12 @@
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: #0d253f;
-  color: #fff;
-  padding: 20px;
+.appContainer {
+  min-height: 100dvh;
+  display: grid;
+  place-items: start center;
+  grid-auto-rows: max-content;
+  padding-block: 2rem;
+  padding-inline: 1rem;
+  background: linear-gradient(145deg, #061a2c, #123c64);
+  color: #e0f0ff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  gap: 2rem;
 }
