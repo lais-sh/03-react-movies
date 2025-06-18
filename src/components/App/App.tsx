@@ -22,20 +22,20 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [backdrop, setBackdrop] = useState<string | null>(null);
 
-  const handleForm = async (formData: FormData) => {
-    const term = formData.get('query')?.toString().trim() ?? '';
-    setSearchTerm(term);
+  // ✅ Очікувана форма — приймає саме рядок
+  const handleSearch = async (query: string) => {
+    setSearchTerm(query);
     setError(false);
     setLoading(true);
 
     try {
-      const results = await fetchMovies(term);
-      if (results.length === 0) {
+      const result = await fetchMovies(query);
+      if (result.length === 0) {
         toast('No movies found.', { icon: '🎬' });
       }
-      setMovies(results);
+      setMovies(result);
     } catch (err) {
-      console.error('Ошибка загрузки фильмов:', err);
+      console.error('Error fetching movies:', err);
       setError(true);
     } finally {
       setLoading(false);
@@ -69,12 +69,13 @@ export default function App() {
       {loading && <Loader />}
       {!movies.length && <RandomBackdrop bgUrl={backdrop} />}
 
-      <SearchBar action={handleForm} defaultValue={searchTerm} />
+      {/* ✅ Оновлений SearchBar з правильним пропсом */}
+      <SearchBar onSubmit={handleSearch} defaultValue={searchTerm} />
 
       {error ? (
         <ErrorMessage />
       ) : (
-        <MovieGrid movieList={movies} handleMovieClick={setActiveMovie} />
+        <MovieGrid movies={movies} onSelect={setActiveMovie} />
       )}
 
       {activeMovie && <MovieModal movie={activeMovie} onClose={closeModal} />}
